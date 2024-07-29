@@ -47,19 +47,23 @@ namespace ServerLog
             scpLeftLogFilePath = Path.Combine(logDirectory, "scp_left_log.txt");
             connectLogFilePath = Path.Combine(logDirectory, "connect_log.txt");
 
-            if (!File.Exists(killLogFilePath))
-            {
-                File.Create(killLogFilePath).Dispose();
-            }
+            EnsureFileExists(killLogFilePath);
+            EnsureFileExists(scpLeftLogFilePath);
+            EnsureFileExists(connectLogFilePath);
+        }
 
-            if (!File.Exists(scpLeftLogFilePath))
+        private void EnsureFileExists(string filePath)
+        {
+            try
             {
-                File.Create(scpLeftLogFilePath).Dispose();
+                if (!File.Exists(filePath))
+                {
+                    File.Create(filePath).Dispose();
+                }
             }
-
-            if (!File.Exists(connectLogFilePath))
+            catch (Exception ex)
             {
-                File.Create(connectLogFilePath).Dispose();
+                Log.Error($"Failed to create or check file {filePath}: {ex}");
             }
         }
 
@@ -79,37 +83,28 @@ namespace ServerLog
 
         public void LogKillToFile(string message)
         {
-            try
-            {
-                File.AppendAllText(killLogFilePath, $"{DateTime.Now}: {message}{Environment.NewLine}");
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"Failed to write to kill log file: {ex}");
-            }
+            LogToFile(killLogFilePath, message);
         }
 
         public void LogScpLeftToFile(string message)
         {
-            try
-            {
-                File.AppendAllText(scpLeftLogFilePath, $"{DateTime.Now}: {message}{Environment.NewLine}");
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"Failed to write to SCP left log file: {ex}");
-            }
+            LogToFile(scpLeftLogFilePath, message);
         }
 
         public void LogConnectToFile(string message)
         {
+            LogToFile(connectLogFilePath, message);
+        }
+
+        private void LogToFile(string filePath, string message)
+        {
             try
             {
-                File.AppendAllText(connectLogFilePath, $"{DateTime.Now}: {message}{Environment.NewLine}");
+                File.AppendAllText(filePath, $"{DateTime.Now}: {message}{Environment.NewLine}");
             }
             catch (Exception ex)
             {
-                Log.Error($"Failed to write to connect log file: {ex}");
+                Log.Error($"Failed to write to file {filePath}: {ex}");
             }
         }
     }
@@ -117,6 +112,61 @@ namespace ServerLog
     public class EventHandlers
     {
         private readonly Dictionary<string, RoleTypeId> playerRoles = new Dictionary<string, RoleTypeId>();
+        private readonly Dictionary<RoleTypeId, string> roleNames = new Dictionary<RoleTypeId, string>
+        {
+            { RoleTypeId.ClassD, "죄수" },
+            { RoleTypeId.Scientist, "과학자" },
+            { RoleTypeId.FacilityGuard, "경비원" },
+            { RoleTypeId.NtfPrivate, "MTF 이등병" },
+            { RoleTypeId.NtfSpecialist, "MTF 상등병" },
+            { RoleTypeId.NtfSergeant, "MTF 병장" },
+            { RoleTypeId.NtfCaptain, "MTF 대위" },
+            { RoleTypeId.ChaosRifleman, "혼돈의 반란 병사" },
+            { RoleTypeId.ChaosConscript, "혼돈의 반란 징집병" },
+            { RoleTypeId.Scp049, "SCP-049" },
+            { RoleTypeId.Scp0492, "SCP-049-2" },
+            { RoleTypeId.Scp079, "SCP-079" },
+            { RoleTypeId.Scp096, "SCP-096" },
+            { RoleTypeId.Scp106, "SCP-106" },
+            { RoleTypeId.Scp173, "SCP-173" },
+            { RoleTypeId.Scp939, "SCP-939" },
+            { RoleTypeId.Scp3114, "SCP-3114" },
+            // Add more roles as needed
+        };
+
+        private readonly Dictionary<DamageType, string> damageTypeTranslations = new Dictionary<DamageType, string>
+        {
+            { DamageType.Falldown, "낙사" },
+            { DamageType.PocketDimension, "할배 주머니" },
+            { DamageType.Scp, "SCP" },
+            { DamageType.Asphyxiation, "질식" },
+            { DamageType.Bleeding, "출혈" },
+            { DamageType.CardiacArrest, "심정지" },
+            { DamageType.Custom, "커스텀" },
+            { DamageType.Decontamination, "제독" },
+            { DamageType.Explosion, "폭발" },
+            { DamageType.FriendlyFireDetector, "아군 사격 탐지기" },
+            { DamageType.MicroHid, "레일건" },
+            { DamageType.Poison, "독" },
+            { DamageType.Tesla, "테슬라" },
+            { DamageType.Logicer, "로지카" },
+            { DamageType.E11Sr, "E11" },
+            { DamageType.Jailbird, "제일버드" },
+            { DamageType.A7, "A7" },
+            { DamageType.Revolver, "리볼버" },
+            { DamageType.Crossvec, "벡터" },
+            { DamageType.Shotgun, "샷건" },
+            { DamageType.Fsp9, "Fsp9" },
+            { DamageType.Com45, "Com45" },
+            { DamageType.Com18, "Com18" },
+            { DamageType.Com15, "Com15" },
+            { DamageType.ParticleDisruptor, "3X 입자 분열기" },
+            { DamageType.Scp173, "SCP-173" },
+            { DamageType.Scp096, "SCP-096" },
+            { DamageType.Scp106, "SCP-106" },
+            { DamageType.Scp939, "SCP-939" },
+            { DamageType.Scp3114, "SCP-3114" },
+        };
 
         public void OnPlayerVerified(VerifiedEventArgs ev)
         {
@@ -124,7 +174,7 @@ namespace ServerLog
             {
                 string logMessage = $"{ev.Player.Nickname} (Steam ID: {ev.Player.UserId}, IP: {ev.Player.IPAddress}) 님이 들어오셨습니다.";
                 Log.Info(logMessage);
-                PluginMain.Singleton.LogConnectToFile(logMessage); // 접속 로그를 connect_log.txt에 기록
+                PluginMain.Singleton.LogConnectToFile(logMessage);
             }
             catch (Exception ex)
             {
@@ -150,9 +200,14 @@ namespace ServerLog
             {
                 if (playerRoles.TryGetValue(ev.Player.UserId, out RoleTypeId role))
                 {
-                    // 예외 처리: Spectator 역할일 경우 로그에 기록하지 않음
                     if (role == RoleTypeId.Spectator)
                         return;
+
+                    if (ev.DamageHandler.Type == DamageType.Unknown)
+                        return;
+
+                    string roleName = roleNames.ContainsKey(role) ? roleNames[role] : role.ToString();
+                    string damageTypeName = GetDamageTypeName(ev.DamageHandler.Type);
 
                     string logMessage;
 
@@ -161,17 +216,18 @@ namespace ServerLog
                         var attacker = attackerHandler.Attacker;
                         if (attacker != null)
                         {
-                            string killerInfo = $"죽인 사람: {attacker.Nickname} (역할: {attacker.Role.Type}, Steam ID: {attacker.UserId}, IP: {attacker.IPAddress})";
-                            logMessage = $"{ev.Player.Nickname}님이 {role} 역할로 죽으셨습니다. 사망 원인: {ev.DamageHandler.Type} (Steam ID: {ev.Player.UserId}) {killerInfo}";
+                            string killerRoleName = roleNames.ContainsKey(attacker.Role.Type) ? roleNames[attacker.Role.Type] : attacker.Role.Type.ToString();
+                            string killerInfo = $"죽인 사람: {attacker.Nickname} (역할: {killerRoleName}, Steam ID: {attacker.UserId}, IP: {attacker.IPAddress})";
+                            logMessage = $"{ev.Player.Nickname}님이 {roleName} 역할로 죽으셨습니다. 사망 원인: {damageTypeName} (Steam ID: {ev.Player.UserId}) {killerInfo}";
                         }
                         else
                         {
-                            logMessage = $"{ev.Player.Nickname}님이 {role} 역할로 죽으셨습니다. 사망 원인: {ev.DamageHandler.Type} (Steam ID: {ev.Player.UserId})";
+                            logMessage = $"{ev.Player.Nickname}님이 {roleName} 역할로 죽으셨습니다. 사망 원인: {damageTypeName} (Steam ID: {ev.Player.UserId})";
                         }
                     }
                     else
                     {
-                        logMessage = $"{ev.Player.Nickname}님이 {role} 역할로 죽으셨습니다. (Steam ID: {ev.Player.UserId})";
+                        logMessage = $"{ev.Player.Nickname}님이 {roleName} 역할로 죽으셨습니다. 사망 원인: {damageTypeName} (Steam ID: {ev.Player.UserId})";
                     }
 
                     Log.Info(logMessage);
@@ -184,13 +240,27 @@ namespace ServerLog
             }
         }
 
+        private string GetDamageTypeName(DamageType damageType)
+        {
+            try
+            {
+                return damageTypeTranslations.TryGetValue(damageType, out string translation) ? translation : damageType.ToString();
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error in translating DamageType: {ex}");
+                return damageType.ToString();
+            }
+        }
+
         public void OnPlayerLeft(LeftEventArgs ev)
         {
             try
             {
                 if (ev.Player.IsAlive && ev.Player.Role.Team == Team.SCPs)
                 {
-                    string logMessage = $"{ev.Player.Nickname} (Steam ID: {ev.Player.UserId}) 님이 살아있는 상태로 게임을 나갔습니다. (역할: {ev.Player.Role.Type})";
+                    string roleName = roleNames.ContainsKey(ev.Player.Role.Type) ? roleNames[ev.Player.Role.Type] : ev.Player.Role.Type.ToString();
+                    string logMessage = $"{ev.Player.Nickname} (Steam ID: {ev.Player.UserId}) 님이 살아있는 상태로 게임을 나갔습니다. (역할: {roleName})";
                     Log.Info(logMessage);
                     PluginMain.Singleton.LogScpLeftToFile(logMessage);
                 }

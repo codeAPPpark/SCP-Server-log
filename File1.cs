@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Exiled.API.Features;
 using Exiled.Events.EventArgs;
@@ -10,6 +10,7 @@ using PlayerRoles;
 using System.Collections.Generic;
 using Exiled.Events.Handlers;
 using Exiled.API.Features.DamageHandlers;
+using PluginAPI.Roles;
 
 namespace ServerLog
 {
@@ -115,12 +116,15 @@ namespace ServerLog
         private readonly Dictionary<RoleTypeId, string> roleNames = new Dictionary<RoleTypeId, string>
         {
             { RoleTypeId.ClassD, "죄수" },
+            { RoleTypeId.Tutorial, "튜토리얼" },
             { RoleTypeId.Scientist, "과학자" },
             { RoleTypeId.FacilityGuard, "경비원" },
             { RoleTypeId.NtfPrivate, "MTF 이등병" },
             { RoleTypeId.NtfSpecialist, "MTF 상등병" },
             { RoleTypeId.NtfSergeant, "MTF 병장" },
             { RoleTypeId.NtfCaptain, "MTF 대위" },
+            { RoleTypeId.ChaosRepressor, "혼돈의 반란 약탈자" },
+            { RoleTypeId.ChaosMarauder, "혼돈의 반란 압제자" },
             { RoleTypeId.ChaosRifleman, "혼돈의 반란 병사" },
             { RoleTypeId.ChaosConscript, "혼돈의 반란 징집병" },
             { RoleTypeId.Scp049, "SCP-049" },
@@ -156,10 +160,7 @@ namespace ServerLog
             { DamageType.Revolver, "리볼버" },
             { DamageType.Crossvec, "벡터" },
             { DamageType.Shotgun, "샷건" },
-            { DamageType.Fsp9, "Fsp9" },
-            { DamageType.Com45, "Com45" },
-            { DamageType.Com18, "Com18" },
-            { DamageType.Com15, "Com15" },
+            { DamageType.Fsp9, "mp7" },
             { DamageType.ParticleDisruptor, "3X 입자 분열기" },
             { DamageType.Scp173, "SCP-173" },
             { DamageType.Scp096, "SCP-096" },
@@ -278,3 +279,4 @@ namespace ServerLog
         public bool Debug { get; set; } = false;
     }
 }
+수박바 먹고 씹따
